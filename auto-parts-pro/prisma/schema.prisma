@@ -6,15 +6,132 @@ generator client {
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    @@index([name])
+model Customer {
+    id              Int      @id @default(autoincrement())
+    name            String
+    email           String
+    phoneNumber     String
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    deletedAt       DateTime?
+    vehicles        Vehicle[]
+    repairOrders    RepairOrder[]
+    @@map("customers")
 }
+
+model Make {
+    id         Int      @id @default(autoincrement())
+    name       String
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+    deletedAt  DateTime?
+    vehicles   Vehicle[]
+
+    @@map("makes")
+}
+
+model Vehicle {
+    id           Int      @id @default(autoincrement())
+    customerId   Int
+    makeId       Int
+    model        String
+    year         Int
+    licensePlate String
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+    deletedAt    DateTime?
+    customer     Customer @relation(fields: [customerId], references: [id])
+    make         Make     @relation(fields: [makeId], references: [id])
+    repairOrders RepairOrder[]
+
+    @@map("vehicles")
+}
+
+model Part {
+    id                  Int      @id @default(autoincrement())
+    name                String
+    description         String?
+    costPrice           Float
+    sellPrice           Float
+    profit              Float
+    availableQuantity   Int      @default(0)
+    createdAt           DateTime @default(now())
+    updatedAt           DateTime @updatedAt
+    deletedAt           DateTime?
+    orderDetails       OrderDetail[]
+
+    @@map("parts")
+}
+
+model RepairOrder {
+    id                 Int      @id @default(autoincrement())
+    vehicleId          Int
+    customerId         Int
+    status             Status
+    description        String?
+    costPrice          Float
+    markup             Float
+    profit             Float
+    priority           Priority
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+    deletedAt          DateTime?
+    vehicle            Vehicle  @relation(fields: [vehicleId], references: [id])
+    customer           Customer @relation(fields: [customerId], references: [id])
+    labors             Labor[]
+    orderDetails       OrderDetail[]
+
+    @@map("repair_orders")
+}
+
+model OrderDetail {
+    id              Int      @id @default(autoincrement())
+    orderId         Int
+    partId          Int
+    quantity        Int
+    costPrice       Float
+    sellPrice       Float
+    profit          Float
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    deletedAt       DateTime?
+    part            Part     @relation(fields: [partId], references: [id])
+    order           RepairOrder @relation(fields: [orderId], references: [id])
+
+    @@map("order_details")
+}
+
+model Labor {
+    id              Int      @id @default(autoincrement())
+    orderId         Int
+    name            String
+    description     String?
+    hours           Float
+    rate            Float
+    total           Float
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    deletedAt       DateTime?
+    order           RepairOrder @relation(fields: [orderId], references: [id])
+
+    @@map("labors")
+}
+
+enum Status {
+    PENDING
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+}
+
+enum Priority {
+    LOW
+    MEDIUM
+    HIGH
+}
+
