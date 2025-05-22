@@ -89,6 +89,27 @@ export const NewCustomerDialog = ({
               <p className="px-1 text-xs text-red-600">{errors.name.message}</p>
             )}
           </div>
+          {/* Email */}
+          <div className="flex w-full flex-col">
+            <Label htmlFor="email" required>
+              Email
+            </Label>
+            <Input
+              id="email"
+              placeholder=""
+              type="email"
+              autoCorrect="off"
+              disabled={createCustomerMutation.isPending}
+              {...register("email")}
+              className="mt-2"
+              required
+            />
+            {errors?.email && (
+              <p className="px-1 text-xs text-red-600">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
           {/* Phone number */}
           <div className="flex w-full flex-col">
             <Label htmlFor="phoneNumber">Phone number</Label>
@@ -104,24 +125,6 @@ export const NewCustomerDialog = ({
             {errors?.phoneNumber && (
               <p className="px-1 text-xs text-red-600">
                 {errors.phoneNumber.message}
-              </p>
-            )}
-          </div>
-          {/* Email */}
-          <div className="flex w-full flex-col">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              placeholder=""
-              type="email"
-              autoCorrect="off"
-              disabled={createCustomerMutation.isPending}
-              {...register("email")}
-              className="mt-2"
-            />
-            {errors?.email && (
-              <p className="px-1 text-xs text-red-600">
-                {errors.email.message}
               </p>
             )}
           </div>
