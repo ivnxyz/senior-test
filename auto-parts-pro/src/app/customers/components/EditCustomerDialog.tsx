@@ -33,7 +33,6 @@ export const EditCustomerDialog = ({
   setIsOpen,
   customer,
 }: EditCustomerDialogProps) => {
-  console.log("DEBUG customer=", customer);
   // Form state
   const {
     register,
@@ -47,6 +46,8 @@ export const EditCustomerDialog = ({
       phoneNumber: customer?.phoneNumber,
     },
   });
+
+  console.log("DEBUG errors=", errors);
 
   // Handle update
   const updateCustomerMutation = api.customers.update.useMutation({
@@ -81,7 +82,7 @@ export const EditCustomerDialog = ({
               type="text"
               autoCorrect="off"
               disabled={updateCustomerMutation.isPending}
-              {...register("phoneNumber")}
+              {...register("name")}
               className="mt-2"
               required
             />

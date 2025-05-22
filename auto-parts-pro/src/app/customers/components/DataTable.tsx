@@ -112,18 +112,18 @@ export function DataTable() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem
                   onClick={editCustomer}
                   className="cursor-pointer"
                 >
-                  Editar
+                  Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={deleteCustomer}
                   className="text-destructive hover:text-destructive cursor-pointer"
                 >
-                  Eliminar
+                  Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -178,14 +178,12 @@ export function DataTable() {
   return (
     <>
       {/* Dialog */}
-      {showEditDialog && (
-        <EditCustomerDialog
-          key={`${selectedCustomer?.id}-edit`}
-          isOpen={showEditDialog}
-          setIsOpen={setShowEditDialog}
-          customer={selectedCustomer}
-        />
-      )}
+      <EditCustomerDialog
+        key={`${selectedCustomer?.id}-edit`}
+        isOpen={showEditDialog}
+        setIsOpen={setShowEditDialog}
+        customer={selectedCustomer}
+      />
       <DeleteCustomerDialog
         key={`${selectedCustomer?.id}-delete`}
         isOpen={showDeleteDialog}
