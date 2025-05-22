@@ -31,14 +31,14 @@ const items = [
     icon: WrenchIcon,
   },
   {
-    title: "Customers",
-    url: "/customers",
-    icon: BookUserIcon,
-  },
-  {
     title: "Vehicles",
     url: "/vehicles",
     icon: CarIcon,
+  },
+  {
+    title: "Customers",
+    url: "/customers",
+    icon: BookUserIcon,
   },
   {
     title: "Parts",

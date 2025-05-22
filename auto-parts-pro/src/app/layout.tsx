@@ -4,6 +4,7 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { Toaster } from "@/components/ui/sonner";
 
 import { TRPCReactProvider } from "@/trpc/react";
 
@@ -27,10 +28,11 @@ export default function RootLayout({
         <TRPCReactProvider>
           <SidebarProvider>
             <AppSidebar />
-            <main>
+            <main className="w-full">
               <SidebarTrigger />
               {children}
             </main>
+            <Toaster />
           </SidebarProvider>
         </TRPCReactProvider>
       </body>
