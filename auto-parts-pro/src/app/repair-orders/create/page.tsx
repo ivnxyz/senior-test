@@ -158,6 +158,14 @@ export default function CreateRepairOrderPage() {
       return;
     }
 
+    // Check if there's enough stock available
+    if (selectedPart.availableQuantity < newPart.quantity) {
+      toast.error(
+        `Not enough stock. Only ${selectedPart.availableQuantity} units available.`,
+      );
+      return;
+    }
+
     // Check if part already exists in orderDetails
     const existingPartIndex = orderDetails.findIndex(
       (detail) => detail.partId === newPart.partId,
@@ -170,6 +178,15 @@ export default function CreateRepairOrderPage() {
       const existingPart = orderDetails[existingPartIndex];
       if (existingPart) {
         const newQuantity = existingPart.quantity + newPart.quantity;
+
+        // Check if combined quantity exceeds available stock
+        if (selectedPart.availableQuantity < newQuantity) {
+          toast.error(
+            `Not enough stock. Can't add ${newPart.quantity} more units. Only ${selectedPart.availableQuantity - existingPart.quantity} additional units available.`,
+          );
+          return;
+        }
+
         const newCostPrice = selectedPart.costPrice * newQuantity;
         const newSellPrice = selectedPart.sellPrice * newQuantity;
 
@@ -476,12 +493,14 @@ export default function CreateRepairOrderPage() {
                             id: number;
                             name: string;
                             sellPrice: number;
+                            availableQuantity: number;
                           }) => (
                             <SelectItem
                               key={part.id}
                               value={part.id.toString()}
                             >
-                              {part.name} (${part.sellPrice.toFixed(2)})
+                              {part.name} (${part.sellPrice.toFixed(2)}) -{" "}
+                              {part.availableQuantity} in stock
                             </SelectItem>
                           ),
                         )}
