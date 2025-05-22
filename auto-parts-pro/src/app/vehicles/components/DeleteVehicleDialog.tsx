@@ -9,34 +9,34 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import type { Customer } from "@prisma/client";
+import type { Vehicle } from "@prisma/client";
 import { api } from "@/trpc/react";
 import { Loader2 } from "lucide-react";
 
-interface DeleteCustomerDialogProps {
+interface DeleteVehicleDialogProps {
   isOpen: boolean;
   setIsOpen: (value: boolean) => void;
-  customer?: Customer | null;
+  vehicle?: Vehicle | null;
 }
 
-export function DeleteCustomerDialog({
+export function DeleteVehicleDialog({
   isOpen,
   setIsOpen,
-  customer,
-}: DeleteCustomerDialogProps) {
-  if (!customer) {
+  vehicle,
+}: DeleteVehicleDialogProps) {
+  if (!vehicle) {
     return <></>;
   }
 
-  const deleteCustomerMutation = api.customers.delete.useMutation({
+  const deleteVehicleMutation = api.vehicles.delete.useMutation({
     onSuccess: () => {
-      toast.success("Customer deleted successfully");
+      toast.success("Vehicle deleted successfully");
 
       // Reload page
       window.location.reload();
     },
     onError: () => {
-      toast.error("An error occurred while deleting customer");
+      toast.error("An error occurred while deleting vehicle");
     },
   });
 
@@ -46,17 +46,17 @@ export function DeleteCustomerDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            Deleting &quot;{customer.name}&quot; cannot be undone
+            Deleting &quot;{vehicle.model}&quot; cannot be undone
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={() => deleteCustomerMutation.mutate(customer.id)}
-            disabled={deleteCustomerMutation.isPending}
+            onClick={() => deleteVehicleMutation.mutate(vehicle.id)}
+            disabled={deleteVehicleMutation.isPending}
             className="bg-destructive text-white hover:bg-red-600"
           >
-            {deleteCustomerMutation.isPending && (
+            {deleteVehicleMutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
             Delete

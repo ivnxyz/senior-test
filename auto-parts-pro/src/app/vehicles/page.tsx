@@ -1,8 +1,7 @@
 import { Header } from "@/components/ui/header";
 
 import { NewVehicleDialog } from "./components/NewVehicleDialog";
-
-// import { DataTable } from "./components/DataTable";
+import { DataTable } from "./components/DataTable";
 
 export default function VehiclesPage() {
   return (
@@ -16,7 +15,7 @@ export default function VehiclesPage() {
       </Header>
       {/* Content */}
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
-        {/* <DataTable /> */}
+        <DataTable />
       </div>
     </div>
   );

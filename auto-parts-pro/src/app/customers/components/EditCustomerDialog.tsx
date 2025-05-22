@@ -47,8 +47,6 @@ export const EditCustomerDialog = ({
     },
   });
 
-  console.log("DEBUG errors=", errors);
-
   // Handle update
   const updateCustomerMutation = api.customers.update.useMutation({
     onSuccess: () => {

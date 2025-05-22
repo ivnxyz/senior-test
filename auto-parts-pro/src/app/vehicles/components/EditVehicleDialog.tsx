@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import type * as z from "zod";
 
@@ -13,29 +11,30 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { api } from "@/trpc/react";
 import { toast } from "sonner";
-import { CustomerSelector } from "@/components/customer-selector";
-import { vehicleSchema } from "@/lib/validations/vehicle";
+import type { Vehicle } from "@prisma/client";
+import { Loader2 } from "lucide-react";
+import { api } from "@/trpc/react";
+import { editVehicleSchema } from "@/lib/validations/vehicle";
 import { MakeSelector } from "@/components/make-selector";
+import { CustomerSelector } from "@/components/customer-selector";
 
-type FormData = z.infer<typeof vehicleSchema>;
+type FormData = z.infer<typeof editVehicleSchema>;
 
-interface NewVehicleDialogProps {
-  secondary?: boolean;
-  trigger?: React.ReactNode;
+interface EditVehicleDialogProps {
+  isOpen: boolean;
+  setIsOpen: (value: boolean) => void;
+  vehicle?: Vehicle | null;
 }
 
-export const NewVehicleDialog = ({
-  secondary = false,
-  trigger,
-}: NewVehicleDialogProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-
+export const EditVehicleDialog = ({
+  isOpen,
+  setIsOpen,
+  vehicle,
+}: EditVehicleDialogProps) => {
   // Form state
   const {
     register,
@@ -44,36 +43,39 @@ export const NewVehicleDialog = ({
     watch,
     setValue,
   } = useForm<FormData>({
-    resolver: zodResolver(vehicleSchema),
+    resolver: zodResolver(editVehicleSchema),
+    defaultValues: {
+      id: vehicle?.id,
+      customerId: vehicle?.customerId,
+      makeId: vehicle?.makeId,
+      model: vehicle?.model,
+      year: vehicle?.year,
+      licensePlate: vehicle?.licensePlate,
+    },
   });
 
   const selectedCustomer = watch("customerId");
   const selectedMake = watch("makeId");
 
-  // Create vehicle mutation
-  const createVehicleMutation = api.vehicles.create.useMutation({
+  // Handle update
+  const updateVehicleMutation = api.vehicles.update.useMutation({
     onSuccess: () => {
-      toast.success("Vehicle created successfully");
+      toast.success("Vehicle updated successfully");
+
+      // Reload page
       window.location.reload();
     },
     onError: () => {
-      toast.error("An error ocurred while creating the vehicle");
+      toast.error("An error occurred while updating vehicle");
     },
   });
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button variant={secondary ? "outline" : "default"}>
-            Add vehicle <Plus className="ml-2 h-4 w-4" />
-          </Button>
-        )}
-      </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         {/* Header */}
         <DialogHeader>
-          <DialogTitle>New vehicle</DialogTitle>
+          <DialogTitle>Edit vehicle</DialogTitle>
         </DialogHeader>
         {/* Main content */}
         <div className="mt-3 grid gap-3">
@@ -120,7 +122,7 @@ export const NewVehicleDialog = ({
               placeholder=""
               type="text"
               autoCorrect="off"
-              disabled={createVehicleMutation.isPending}
+              disabled={updateVehicleMutation.isPending}
               {...register("model")}
               className="mt-2"
               required
@@ -141,7 +143,7 @@ export const NewVehicleDialog = ({
               placeholder=""
               type="number"
               autoCorrect="off"
-              disabled={createVehicleMutation.isPending}
+              disabled={updateVehicleMutation.isPending}
               {...register("year")}
               className="mt-2"
             />
@@ -159,7 +161,7 @@ export const NewVehicleDialog = ({
               placeholder=""
               type="text"
               autoCorrect="off"
-              disabled={createVehicleMutation.isPending}
+              disabled={updateVehicleMutation.isPending}
               {...register("licensePlate")}
               className="mt-2"
             />
@@ -174,15 +176,13 @@ export const NewVehicleDialog = ({
         <DialogFooter>
           <Button
             type="submit"
-            disabled={createVehicleMutation.isPending}
-            onClick={handleSubmit((data: FormData) =>
-              createVehicleMutation.mutate(data),
-            )}
+            disabled={updateVehicleMutation.isPending}
+            onClick={handleSubmit((data) => updateVehicleMutation.mutate(data))}
           >
-            {createVehicleMutation.isPending && (
+            {updateVehicleMutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Add vehicle
+            Save
           </Button>
         </DialogFooter>
       </DialogContent>

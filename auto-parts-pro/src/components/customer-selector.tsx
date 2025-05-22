@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { ChevronsUpDownIcon, CheckIcon } from "lucide-react";
+import { ChevronsUpDownIcon, CheckIcon, Loader2 } from "lucide-react";
 import { PlusIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -42,7 +42,7 @@ export function CustomerSelector({
 }: CustomerSelectorProps) {
   const [open, setOpen] = useState(false);
 
-  const { data: customers, refetch } = api.customers.list.useQuery();
+  const { data: customers, refetch, isLoading } = api.customers.list.useQuery();
 
   const onCustomerFoundOrCreated = useCallback(
     async (customer: Customer) => {
@@ -74,13 +74,16 @@ export function CustomerSelector({
               role="combobox"
               aria-expanded={open}
               className="flex-1 justify-between px-3 py-2 text-sm font-normal"
-              disabled={disabled}
+              disabled={disabled ?? isLoading}
             >
               {selectedCustomer
                 ? customers?.find(
                     (customer) => customer.id === selectedCustomer,
                   )?.name
                 : placeholder}
+              {isLoading && (
+                <Loader2 className="ml-2 h-4 w-4 shrink-0 animate-spin opacity-50" />
+              )}
               <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -118,7 +121,12 @@ export function CustomerSelector({
         {!hideAddNew && (
           <NewCustomerDialog
             trigger={
-              <Button variant="outline" size="icon" className="shrink-0">
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                disabled={disabled ?? isLoading}
+              >
                 <PlusIcon className="h-4 w-4" />
               </Button>
             }
