@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+// import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import {
   type ColumnDef,
   flexRender,
@@ -32,8 +32,8 @@ import {
 import type { Customer } from "@prisma/client";
 import { api } from "@/trpc/react";
 
-// import { DeleteCustomerDialog } from "./DeleteCustomerDialog";
-// import { EditCustomerDialog } from "./EditCustomerDialog";
+import { DeleteCustomerDialog } from "./DeleteCustomerDialog";
+import { EditCustomerDialog } from "./EditCustomerDialog";
 
 export function DataTable() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
@@ -43,9 +43,6 @@ export function DataTable() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Get customers
-  // const { customers, status, pagination, loadPreviousPage, loadNextPage } =
-  //   useCustomers();
-
   const { data: customers, isLoading } = api.customers.list.useQuery();
 
   // Table columns
@@ -181,18 +178,20 @@ export function DataTable() {
   return (
     <>
       {/* Dialog */}
-      {/* <EditCustomerDialog
-        key={selectedCustomer?.id}
-        isOpen={showEditDialog}
-        setIsOpen={setShowEditDialog}
-        customer={selectedCustomer}
-      />
+      {showEditDialog && (
+        <EditCustomerDialog
+          key={`${selectedCustomer?.id}-edit`}
+          isOpen={showEditDialog}
+          setIsOpen={setShowEditDialog}
+          customer={selectedCustomer}
+        />
+      )}
       <DeleteCustomerDialog
-        key={selectedCustomer?.id}
+        key={`${selectedCustomer?.id}-delete`}
         isOpen={showDeleteDialog}
         setIsOpen={setShowDeleteDialog}
         customer={selectedCustomer}
-      /> */}
+      />
       <div className="relative w-full overflow-hidden rounded-md border">
         <Table>
           <TableHeader>

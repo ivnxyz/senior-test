@@ -14,7 +14,7 @@ datasource db {
 model Customer {
     id              Int      @id @default(autoincrement())
     name            String   @db.VarChar(255)
-    email           String   @unique @db.VarChar(255)
+    email           String   @db.VarChar(255)
     phoneNumber     String?  @db.VarChar(255)
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
