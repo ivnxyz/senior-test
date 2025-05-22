@@ -8,35 +8,27 @@ export const vehiclesRouter = createTRPCRouter({
       data: input,
     });
   }),
-  list: publicProcedure.query(async ({ ctx }) => {
-    return ctx.db.vehicle.findMany({
-      where: {
-        customer: {
-          deletedAt: null,
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        customer: true,
-        make: true,
-      },
-    });
-  }),
-  byCustomerId: publicProcedure
-    .input(z.object({ customerId: z.number().int() }))
+  list: publicProcedure
+    .input(
+      z.object({
+        customerId: z.number().int().optional(),
+      }).optional().nullable()
+    )
     .query(async ({ ctx, input }) => {
       return ctx.db.vehicle.findMany({
         where: {
-          customerId: input.customerId,
+          ...(input?.customerId ? { customerId: input.customerId } : {}),
+          customer: {
+            deletedAt: null,
+          },
           deletedAt: null,
-        },
-        include: {
-          make: true,
         },
         orderBy: {
           createdAt: "desc",
+        },
+        include: {
+          customer: true,
+          make: true,
         },
       });
     }),

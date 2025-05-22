@@ -59,7 +59,7 @@ export default function CreateRepairOrderPage() {
 
   // Fetch vehicles based on selected customer
   const { data: vehicles, isLoading: isLoadingVehicles } =
-    api.vehicles.byCustomerId.useQuery(
+    api.vehicles.list.useQuery(
       { customerId: selectedCustomerId ?? 0 },
       { enabled: !!selectedCustomerId },
     );

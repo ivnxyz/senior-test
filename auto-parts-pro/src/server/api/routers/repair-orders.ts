@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { repairOrderSchema } from "@/lib/validations/repair-order";
+import type { Prisma } from "@prisma/client";
 
 export const repairOrdersRouter = createTRPCRouter({
   list: publicProcedure.query(async ({ ctx }) => {
@@ -17,37 +18,32 @@ export const repairOrdersRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
     });
   }),
+  find: publicProcedure
+    .input(
+      z.object({
+        id: z.number().int().optional(),
+        vehicleId: z.number().int().optional(),
+      }).refine(data => data.id !== undefined || data.vehicleId !== undefined, {
+        message: "Either id or vehicleId must be provided"
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { id, vehicleId } = input;
 
-  byId: publicProcedure
-    .input(z.object({ id: z.number().int() }))
-    .query(async ({ ctx, input }) => {
-      return await ctx.db.repairOrder.findUnique({
-        where: { id: input.id, deletedAt: null },
-        include: {
-          vehicle: {
-            include: {
-              make: true,
-            },
-          },
-          customer: true,
-          orderDetails: {
-            include: {
-              part: true,
-            },
-          },
-          labors: true,
-        },
-      });
-    }),
-    
-  byVehicleId: publicProcedure
-    .input(z.object({ vehicleId: z.number().int() }))
-    .query(async ({ ctx, input }) => {
+      const where: Prisma.RepairOrderWhereInput = {};
+      
+      // If id is provided, find a single repair order
+      if (id) {
+        where.id = id;
+      }
+      
+      // If vehicleId is provided, find all repair orders for that vehicle
+      if (vehicleId) {
+        where.vehicleId = vehicleId;
+      }
+
       return await ctx.db.repairOrder.findMany({
-        where: { 
-          vehicleId: input.vehicleId,
-          deletedAt: null 
-        },
+        where,
         include: {
           vehicle: {
             include: {
@@ -65,7 +61,6 @@ export const repairOrdersRouter = createTRPCRouter({
         orderBy: { createdAt: "desc" },
       });
     }),
-
   create: publicProcedure
     .input(repairOrderSchema)
     .mutation(async ({ ctx, input }) => {
