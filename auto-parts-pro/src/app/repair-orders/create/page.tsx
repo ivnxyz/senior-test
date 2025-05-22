@@ -426,7 +426,9 @@ export default function CreateRepairOrderPage() {
                     <label className="text-sm font-medium">Part</label>
                     <Select
                       disabled={isLoadingParts}
-                      value={newPart.partId.toString() || undefined}
+                      value={
+                        newPart.partId ? newPart.partId?.toString() : undefined
+                      }
                       onValueChange={(value) =>
                         setNewPart({ ...newPart, partId: Number(value) })
                       }
