@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import type * as z from "zod";
 
 import { editPartSchema } from "@/lib/validations/parts";
@@ -39,10 +39,33 @@ export function EditPartDialog({
     register,
     handleSubmit,
     reset,
+    control,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(editPartSchema),
   });
+
+  // Watch for changes to calculate profit
+  const costPrice = useWatch({
+    control,
+    name: "costPrice",
+    defaultValue: 0,
+  });
+
+  const sellPrice = useWatch({
+    control,
+    name: "sellPrice",
+    defaultValue: 0,
+  });
+
+  // Calculate profit when prices change
+  useEffect(() => {
+    if (sellPrice && costPrice) {
+      const calculatedProfit = sellPrice - costPrice;
+      setValue("profit", calculatedProfit);
+    }
+  }, [costPrice, sellPrice, setValue]);
 
   // Reset form when dialog is opened/closed
   useEffect(() => {
@@ -53,7 +76,7 @@ export function EditPartDialog({
         description: part.description ?? undefined,
         costPrice: part.costPrice,
         sellPrice: part.sellPrice,
-        profit: part.profit,
+        profit: part.sellPrice - part.costPrice,
         availableQuantity: part.availableQuantity,
       });
     }
@@ -165,9 +188,7 @@ export function EditPartDialog({
           </div>
           {/* Profit */}
           <div className="flex w-full flex-col">
-            <Label htmlFor="profit" required>
-              Profit
-            </Label>
+            <Label htmlFor="profit">Profit (auto-calculated)</Label>
             <Input
               id="profit"
               placeholder=""
@@ -175,16 +196,10 @@ export function EditPartDialog({
               step="0.01"
               min="0"
               autoCorrect="off"
-              disabled={updatePartMutation.isPending}
+              disabled={true}
               {...register("profit", { valueAsNumber: true })}
-              className="mt-2"
-              required
+              className="bg-muted mt-2"
             />
-            {errors?.profit && (
-              <p className="px-1 text-xs text-red-600">
-                {errors.profit.message}
-              </p>
-            )}
           </div>
           {/* Available Quantity */}
           <div className="flex w-full flex-col">
