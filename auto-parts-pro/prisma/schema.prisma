@@ -75,7 +75,7 @@ model RepairOrder {
     status             Status
     description        String?
     costPrice          Float
-    markup             Float
+    sellPrice          Float
     profit             Float
     priority           Priority
     createdAt          DateTime @default(now())
