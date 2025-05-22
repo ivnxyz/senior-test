@@ -22,6 +22,7 @@ export const repairOrderSchema = z.object({
   description: z.string().optional(),
   costPrice: z.number().min(0, "Cost price must be at least 0"),
   sellPrice: z.number().min(0, "Sell price must be at least 0"),
+  markUp: z.coerce.number().default(0),
   profit: z.number(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH"]),
   orderDetails: z.array(orderDetailSchema),

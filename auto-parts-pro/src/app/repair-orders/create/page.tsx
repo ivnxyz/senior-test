@@ -69,10 +69,11 @@ export default function CreateRepairOrderPage() {
     watch,
     formState: { errors },
   } = useForm<FormData>({
-    resolver: zodResolver(repairOrderSchema),
+    resolver: zodResolver(repairOrderSchema) as any,
     defaultValues: {
       costPrice: 0,
       sellPrice: 0,
+      markUp: 0,
       profit: 0,
       priority: "MEDIUM",
       orderDetails: [],
@@ -248,7 +249,8 @@ export default function CreateRepairOrderPage() {
     const laborCost = laborItems.reduce((sum, item) => sum + item.total, 0); // Assuming labor cost = labor sell price for simplicity
 
     const totalCost = partsCost;
-    const totalSell = partsSell + laborCost;
+    const markUp = watch("markUp") ?? 0;
+    const totalSell = partsSell + laborCost + markUp;
     const totalProfit = totalSell - totalCost;
 
     setValue("costPrice", totalCost);
@@ -292,6 +294,7 @@ export default function CreateRepairOrderPage() {
       vehicleId: selectedVehicleId,
       orderDetails: formattedOrderDetails,
       labors: formattedLabors,
+      markUp: data.markUp ?? 0,
     };
 
     createRepairOrder.mutate(repairOrderData);
@@ -712,6 +715,23 @@ export default function CreateRepairOrderPage() {
                 <span>Total Sell Price:</span>
                 <span>${watch("sellPrice").toFixed(2)}</span>
               </div>
+              <div className="flex justify-between">
+                <span>Mark Up:</span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    className="w-24"
+                    value={watch("markUp")}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value) || 0;
+                      setValue("markUp", value);
+                      updateTotals(orderDetails, labors);
+                    }}
+                  />
+                </div>
+              </div>
               <Separator className="my-2" />
               <div className="flex justify-between font-medium">
                 <span>Total Profit:</span>
@@ -720,12 +740,6 @@ export default function CreateRepairOrderPage() {
             </div>
           </CardContent>
           <CardFooter className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => router.push("/repair-orders")}
-            >
-              Cancel
-            </Button>
             <Button
               onClick={() => void handleSubmit(onSubmit)()}
               disabled={isSubmitting}
