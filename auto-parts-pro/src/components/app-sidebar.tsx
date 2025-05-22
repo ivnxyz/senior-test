@@ -3,6 +3,7 @@ import {
   BookUserIcon,
   CarFrontIcon,
   CarIcon,
+  HomeIcon,
   WrenchIcon,
 } from "lucide-react";
 
@@ -19,6 +20,11 @@ import {
 
 // Menu items.
 const items = [
+  {
+    title: "Dashboard",
+    url: "/",
+    icon: HomeIcon,
+  },
   {
     title: "Repair Orders",
     url: "/repair-orders",
