@@ -91,9 +91,7 @@ export const NewCustomerDialog = ({
           </div>
           {/* Phone number */}
           <div className="flex w-full flex-col">
-            <Label htmlFor="phoneNumber" required>
-              Phone number
-            </Label>
+            <Label htmlFor="phoneNumber">Phone number</Label>
             <Input
               id="phoneNumber"
               placeholder=""
@@ -102,7 +100,6 @@ export const NewCustomerDialog = ({
               disabled={createCustomerMutation.isPending}
               {...register("phoneNumber")}
               className="mt-2"
-              required
             />
             {errors?.phoneNumber && (
               <p className="px-1 text-xs text-red-600">
@@ -112,9 +109,7 @@ export const NewCustomerDialog = ({
           </div>
           {/* Email */}
           <div className="flex w-full flex-col">
-            <Label htmlFor="email" required>
-              Email
-            </Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               placeholder=""
