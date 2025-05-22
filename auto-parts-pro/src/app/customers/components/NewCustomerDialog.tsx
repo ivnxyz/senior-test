@@ -20,17 +20,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
+import type { Customer } from "@prisma/client";
 
 type FormData = z.infer<typeof customerSchema>;
 
 interface NewCustomerDialogProps {
   secondary?: boolean;
   trigger?: React.ReactNode;
+  onCustomerCreated?: (customer: Customer) => void;
 }
 
 export const NewCustomerDialog = ({
   secondary = false,
   trigger,
+  onCustomerCreated,
 }: NewCustomerDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -45,9 +48,17 @@ export const NewCustomerDialog = ({
 
   // Create customer mutation
   const createCustomerMutation = api.customers.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (createdCustomer) => {
+      // Show toast
       toast.success("Customer created successfully");
-      window.location.reload();
+      setIsOpen(false);
+
+      // Callback
+      if (onCustomerCreated) {
+        onCustomerCreated(createdCustomer);
+      } else {
+        window.location.reload();
+      }
     },
     onError: () => {
       toast.error("An error ocurred while creating the customer");
