@@ -16,7 +16,14 @@ const createPrismaClient = () =>
       RepairOrder: true,
       OrderDetail: true,
       Labor: true,
-    }
+    },
+    defaultConfig: {
+      field: "deletedAt",
+      createValue: (deleted) => {
+        if (deleted) return new Date()
+        return null
+      },
+    },
   }));
 
 const globalForPrisma = globalThis as unknown as {
