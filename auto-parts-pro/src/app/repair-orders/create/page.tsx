@@ -157,21 +157,52 @@ export default function CreateRepairOrderPage() {
       return;
     }
 
-    const costPrice = selectedPart.costPrice * newPart.quantity;
-    const sellPrice = selectedPart.sellPrice * newPart.quantity;
+    // Check if part already exists in orderDetails
+    const existingPartIndex = orderDetails.findIndex(
+      (detail) => detail.partId === newPart.partId,
+    );
 
-    const newOrderDetail = {
-      partId: newPart.partId,
-      partName: selectedPart.name,
-      quantity: newPart.quantity,
-      costPrice,
-      sellPrice,
-      profit: sellPrice - costPrice,
-    };
+    let updatedOrderDetails = [...orderDetails];
 
-    setOrderDetails([...orderDetails, newOrderDetail]);
+    if (existingPartIndex >= 0) {
+      // Update existing part
+      const existingPart = orderDetails[existingPartIndex];
+      if (existingPart) {
+        const newQuantity = existingPart.quantity + newPart.quantity;
+        const newCostPrice = selectedPart.costPrice * newQuantity;
+        const newSellPrice = selectedPart.sellPrice * newQuantity;
+
+        updatedOrderDetails[existingPartIndex] = {
+          partId: existingPart.partId,
+          partName: existingPart.partName,
+          quantity: newQuantity,
+          costPrice: newCostPrice,
+          sellPrice: newSellPrice,
+          profit: newSellPrice - newCostPrice,
+        };
+
+        toast.success("Part quantity updated");
+      }
+    } else {
+      // Add new part
+      const costPrice = selectedPart.costPrice * newPart.quantity;
+      const sellPrice = selectedPart.sellPrice * newPart.quantity;
+
+      const newOrderDetail = {
+        partId: newPart.partId,
+        partName: selectedPart.name,
+        quantity: newPart.quantity,
+        costPrice,
+        sellPrice,
+        profit: sellPrice - costPrice,
+      };
+
+      updatedOrderDetails = [...updatedOrderDetails, newOrderDetail];
+    }
+
+    setOrderDetails(updatedOrderDetails);
     setNewPart({ partId: 0, quantity: 1 });
-    updateTotals([...orderDetails, newOrderDetail], labors);
+    updateTotals(updatedOrderDetails, labors);
     setPartDialogOpen(false);
   };
 
