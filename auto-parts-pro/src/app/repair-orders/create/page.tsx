@@ -263,9 +263,9 @@ export default function CreateRepairOrderPage() {
   ) => {
     const partsCost = details.reduce((sum, item) => sum + item.costPrice, 0);
     const partsSell = details.reduce((sum, item) => sum + item.sellPrice, 0);
-    const laborCost = laborItems.reduce((sum, item) => sum + item.total, 0); // Assuming labor cost = labor sell price for simplicity
+    const laborCost = laborItems.reduce((sum, item) => sum + item.total, 0);
 
-    const totalCost = partsCost;
+    const totalCost = partsCost + laborCost;
     const markUp = watch("markUp") ?? 0;
     const totalSell = partsSell + laborCost + markUp;
     const totalProfit = totalSell - totalCost;
