@@ -10,32 +10,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Header } from "@/components/ui/header";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/trpc/react";
 import { repairOrderSchema } from "@/lib/validations/repair-order";
 import type { z } from "zod";
+import type { Priority } from "@prisma/client";
 
 type FormData = z.infer<typeof repairOrderSchema>;
 
 export default function CreateRepairOrderPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
-    null,
-  );
-  const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(
-    null,
-  );
-
-  // Fetch customers
-  const { data: customers, isLoading: isLoadingCustomers } =
-    api.customers.list.useQuery();
-
-  // Fetch vehicles based on selected customer
-  const { data: vehicles, isLoading: isLoadingVehicles } =
-    api.vehicles.byCustomerId.useQuery(
-      { customerId: selectedCustomerId ?? 0 },
-      { enabled: !!selectedCustomerId },
-    );
 
   // Fetch parts for order details
   const { data: parts, isLoading: isLoadingParts } = api.parts.list.useQuery();
@@ -57,6 +49,20 @@ export default function CreateRepairOrderPage() {
       labors: [],
     },
   });
+
+  const selectedCustomerId = watch("customerId");
+  const selectedVehicleId = watch("vehicleId");
+
+  // Fetch customers
+  const { data: customers, isLoading: isLoadingCustomers } =
+    api.customers.list.useQuery();
+
+  // Fetch vehicles based on selected customer
+  const { data: vehicles, isLoading: isLoadingVehicles } =
+    api.vehicles.byCustomerId.useQuery(
+      { customerId: selectedCustomerId ?? 0 },
+      { enabled: !!selectedCustomerId },
+    );
 
   // State for parts and labor items
   const [orderDetails, setOrderDetails] = useState<
@@ -247,19 +253,31 @@ export default function CreateRepairOrderPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">Customer</label>
-              <select
-                className="border-input w-full rounded-md border bg-transparent px-3 py-2 text-sm"
-                onChange={(e) => setSelectedCustomerId(Number(e.target.value))}
-                value={selectedCustomerId ?? ""}
+              <Select
                 disabled={isLoadingCustomers}
+                value={selectedCustomerId?.toString() ?? ""}
+                onValueChange={(value) =>
+                  setValue("customerId", Number(value), {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                    shouldTouch: true,
+                  })
+                }
               >
-                <option value="">Select a customer</option>
-                {customers?.map((customer: { id: number; name: string }) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers?.map((customer: { id: number; name: string }) => (
+                    <SelectItem
+                      key={customer.id}
+                      value={customer.id.toString()}
+                    >
+                      {customer.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {errors.customerId && (
                 <p className="text-destructive text-xs">
                   {errors.customerId.message}
@@ -269,28 +287,40 @@ export default function CreateRepairOrderPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Vehicle</label>
-              <select
-                className="border-input w-full rounded-md border bg-transparent px-3 py-2 text-sm"
-                onChange={(e) => setSelectedVehicleId(Number(e.target.value))}
-                value={selectedVehicleId ?? ""}
+              <Select
                 disabled={!selectedCustomerId || isLoadingVehicles}
+                value={selectedVehicleId?.toString() ?? ""}
+                onValueChange={(value) =>
+                  setValue("vehicleId", Number(value), {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                    shouldTouch: true,
+                  })
+                }
               >
-                <option value="">Select a vehicle</option>
-                {vehicles?.map(
-                  (vehicle: {
-                    id: number;
-                    year: number;
-                    make: { name: string };
-                    model: string;
-                    licensePlate: string;
-                  }) => (
-                    <option key={vehicle.id} value={vehicle.id}>
-                      {vehicle.year} {vehicle.make.name} {vehicle.model} (
-                      {vehicle.licensePlate})
-                    </option>
-                  ),
-                )}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a vehicle" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vehicles?.map(
+                    (vehicle: {
+                      id: number;
+                      year: number;
+                      make: { name: string };
+                      model: string;
+                      licensePlate: string;
+                    }) => (
+                      <SelectItem
+                        key={vehicle.id}
+                        value={vehicle.id.toString()}
+                      >
+                        {vehicle.year} {vehicle.make.name} {vehicle.model} (
+                        {vehicle.licensePlate})
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
               {errors.vehicleId && (
                 <p className="text-destructive text-xs">
                   {errors.vehicleId.message}
@@ -303,8 +333,7 @@ export default function CreateRepairOrderPage() {
             <label className="text-sm font-medium">
               Description (Optional)
             </label>
-            <textarea
-              className="border-input w-full rounded-md border bg-transparent px-3 py-2 text-sm"
+            <Textarea
               rows={3}
               placeholder="Describe the repair order..."
               {...register("description")}
@@ -313,14 +342,25 @@ export default function CreateRepairOrderPage() {
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Priority</label>
-            <select
-              className="border-input w-full rounded-md border bg-transparent px-3 py-2 text-sm"
-              {...register("priority")}
+            <Select
+              value={watch("priority")}
+              onValueChange={(value) =>
+                setValue("priority", value as Priority, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                  shouldTouch: true,
+                })
+              }
             >
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
-            </select>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="LOW">Low</SelectItem>
+                <SelectItem value="MEDIUM">Medium</SelectItem>
+                <SelectItem value="HIGH">High</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -332,23 +372,26 @@ export default function CreateRepairOrderPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="space-y-2">
               <label className="text-sm font-medium">Part</label>
-              <select
-                className="border-input w-full rounded-md border bg-transparent px-3 py-2 text-sm"
-                value={newPart.partId}
-                onChange={(e) =>
-                  setNewPart({ ...newPart, partId: Number(e.target.value) })
-                }
+              <Select
                 disabled={isLoadingParts}
+                value={newPart.partId.toString()}
+                onValueChange={(value) =>
+                  setNewPart({ ...newPart, partId: Number(value) })
+                }
               >
-                <option value={0}>Select a part</option>
-                {parts?.map(
-                  (part: { id: number; name: string; sellPrice: number }) => (
-                    <option key={part.id} value={part.id}>
-                      {part.name} (${part.sellPrice.toFixed(2)})
-                    </option>
-                  ),
-                )}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a part" />
+                </SelectTrigger>
+                <SelectContent>
+                  {parts?.map(
+                    (part: { id: number; name: string; sellPrice: number }) => (
+                      <SelectItem key={part.id} value={part.id.toString()}>
+                        {part.name} (${part.sellPrice.toFixed(2)})
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
