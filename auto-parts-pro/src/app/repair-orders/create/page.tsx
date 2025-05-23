@@ -179,14 +179,6 @@ export default function CreateRepairOrderPage() {
       if (existingPart) {
         const newQuantity = existingPart.quantity + newPart.quantity;
 
-        // Check if combined quantity exceeds available stock
-        if (selectedPart.availableQuantity < newQuantity) {
-          toast.error(
-            `Not enough stock. Can't add ${newPart.quantity} more units. Only ${selectedPart.availableQuantity - existingPart.quantity} additional units available.`,
-          );
-          return;
-        }
-
         const newCostPrice = selectedPart.costPrice * newQuantity;
         const newSellPrice = selectedPart.sellPrice * newQuantity;
 
