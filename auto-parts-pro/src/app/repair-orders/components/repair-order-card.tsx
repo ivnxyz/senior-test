@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import dayjs from "@/lib/dayjs";
 import type { Customer, Make, RepairOrder, Vehicle } from "@prisma/client";
 import { Calendar, User, Car, ArrowRight, PencilIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface RepairOrderCardProps {
   order: RepairOrder & {
@@ -81,8 +82,14 @@ export const RepairOrderCard = ({
         </CardContent>
 
         <CardFooter className="flex justify-between">
-          <div>
+          <div className="flex items-center gap-2">
             <span className="font-medium">${order.sellPrice.toFixed(2)}</span>
+            <Badge
+              variant="outline"
+              className="border-0 bg-green-400/50 text-green-800 shadow-none"
+            >
+              ${order.profit.toFixed(2)}
+            </Badge>
           </div>
           <Button variant="ghost" size="sm">
             View details <ArrowRight className="ml-2 h-4 w-4" />
