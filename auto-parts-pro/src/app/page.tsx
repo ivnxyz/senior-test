@@ -67,6 +67,7 @@ export default function Home() {
               onValueChange={(value) =>
                 setObjective(value as "profit" | "priority")
               }
+              disabled
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Theme" />
