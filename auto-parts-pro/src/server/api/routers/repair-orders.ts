@@ -3,6 +3,8 @@ import { createTRPCRouter, publicProcedure } from "@/server/api/trpc";
 import { repairOrderSchema } from "@/lib/validations/repair-order";
 import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import solver from 'javascript-lp-solver';
+import type { Model } from 'javascript-lp-solver';
 
 export const repairOrdersRouter = createTRPCRouter({
   list: publicProcedure.query(async ({ ctx }) => {
@@ -224,4 +226,111 @@ export const repairOrdersRouter = createTRPCRouter({
         return updatedOrder;
       });
     }),
-}); 
+  optimize: publicProcedure
+    .input(
+      z.object({
+        objective: z.enum(['profit', 'priority']).default('profit'),
+        status: z.enum(['PENDING', 'IN_PROGRESS']).optional().default('PENDING'),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // 1. Get current inventory
+      const parts = await ctx.db.part.findMany({
+        where: { deletedAt: null },
+        select: { id: true, availableQuantity: true, name: true },
+      });
+
+      // 2. Get pending orders with their parts
+      const orders = await ctx.db.repairOrder.findMany({
+        where: { 
+          status: input.status,
+          deletedAt: null 
+        },
+        select: {
+          id: true,
+          profit: true,
+          priority: true,
+          orderDetails: {
+            where: { deletedAt: null },
+            select: { partId: true, quantity: true },
+          },
+        },
+      });
+
+      // 3. Build ILP model
+      const model: Model = {
+        optimize: input.objective,
+        opType: 'max',
+        constraints: {},
+        variables: {},
+        ints: {},
+      };
+
+      // a) Stock constraints
+      for (const part of parts) {
+        model.constraints[`part_${part.id}`] = { max: part.availableQuantity };
+      }
+
+      // b) Binary variables per order
+      for (const order of orders) {
+        const varName = `order_${order.id}`;
+        model.variables[varName] = {};
+        if (model.ints) {
+          model.ints[varName] = 1; // 0-1 binary variable
+        }
+        
+        // Objective function
+        model.variables[varName][input.objective] =
+          input.objective === 'profit' ? order.profit : priorityWeight(order.priority);
+        
+        // Parts consumption
+        for (const orderDetail of order.orderDetails) {
+          model.variables[varName][`part_${orderDetail.partId}`] = orderDetail.quantity;
+        }
+      }
+
+      // 4. Execute solver
+      const solution = solver.Solve(model);
+
+      // 5. Parse results
+      const selectedOrderIds: number[] = [];
+      for (const key of Object.keys(solution)) {
+        if (key.startsWith('order_') && solution[key] === 1) {
+          selectedOrderIds.push(parseInt(key.replace('order_', '')));
+        }
+      }
+
+      const skippedOrderIds = orders
+        .filter((order) => !selectedOrderIds.includes(order.id))
+        .map((order) => order.id);
+
+      // 6. Calculate resulting inventory
+      const inventoryAfter: Record<string, number> = {};
+      for (const part of parts) {
+        inventoryAfter[part.name] = part.availableQuantity;
+      }
+
+      for (const order of orders) {
+        if (selectedOrderIds.includes(order.id)) {
+          for (const orderDetail of order.orderDetails) {
+            const part = parts.find((p) => p.id === orderDetail.partId);
+            if (part) {
+              inventoryAfter[part.name] = (inventoryAfter[part.name] ?? 0) - orderDetail.quantity;
+            }
+          }
+        }
+      }
+
+      return {
+        selectedOrderIds,
+        skippedOrderIds,
+        objectiveValue: solution.result ?? 0,
+        inventoryAfter,
+      };
+    }),
+});
+
+// Helper function to convert priority to weight
+function priorityWeight(priority: 'LOW' | 'MEDIUM' | 'HIGH'): number {
+  return priority === 'HIGH' ? 3 : priority === 'MEDIUM' ? 2 : 1;
+} 
