@@ -3,7 +3,14 @@
 import { Header } from "@/components/ui/header";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Plus, Calendar, User, Car, ArrowRight } from "lucide-react";
+import {
+  Plus,
+  Calendar,
+  User,
+  Car,
+  ArrowRight,
+  PencilIcon,
+} from "lucide-react";
 import { api } from "@/trpc/react";
 import {
   Card,
@@ -14,11 +21,22 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import dayjs from "@/lib/dayjs";
-import { Badge } from "@/components/ui/badge";
+import { getStatusBadgeClass } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UpdateStatusDialog } from "@/components/update-status-dialog";
+import { useState } from "react";
 
 export default function RepairOrdersPage() {
   const { data: repairOrders, isLoading } = api.repairOrders.list.useQuery();
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [selectedOrderStatus, setSelectedOrderStatus] = useState<string>("");
+
+  const handleUpdateStatus = (orderId: number, currentStatus: string) => {
+    setSelectedOrderId(orderId);
+    setSelectedOrderStatus(currentStatus);
+    setStatusDialogOpen(true);
+  };
 
   return (
     <div className="w-full p-4">
@@ -54,7 +72,7 @@ export default function RepairOrdersPage() {
 
         {repairOrders?.map((order) => (
           <Link key={order.id} href={`/repair-orders/${order.id}`}>
-            <Card className="hover:bg-accent/50 cursor-pointer transition-colors">
+            <Card className="hover:bg-accent/50 transition-colors">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div>
@@ -69,9 +87,21 @@ export default function RepairOrdersPage() {
                       </div>
                     </CardDescription>
                   </div>
-                  <Badge className={getStatusBadgeClass(order.status)}>
-                    {order.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleUpdateStatus(order.id, order.status);
+                      }}
+                      className={getStatusBadgeClass(order.status)}
+                    >
+                      {order.status.replace("_", " ")}
+                      <PencilIcon className="h-2 w-2" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
 
@@ -108,6 +138,27 @@ export default function RepairOrdersPage() {
           </Link>
         ))}
       </div>
+
+      {/* Status Update Dialog */}
+      {selectedOrderId && (
+        <UpdateStatusDialog
+          open={statusDialogOpen}
+          onOpenChange={setStatusDialogOpen}
+          repairOrderId={selectedOrderId}
+          currentStatus={
+            selectedOrderStatus as
+              | "PENDING"
+              | "IN_PROGRESS"
+              | "COMPLETED"
+              | "CANCELLED"
+          }
+          onStatusUpdated={() => {
+            // Reset state
+            setSelectedOrderId(null);
+            setSelectedOrderStatus("");
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -131,19 +182,4 @@ function RepairOrderSkeleton() {
       </CardFooter>
     </Card>
   );
-}
-
-function getStatusBadgeClass(status: string) {
-  switch (status) {
-    case "COMPLETED":
-      return "bg-green-500 hover:bg-green-500/90";
-    case "IN_PROGRESS":
-      return "bg-yellow-500 hover:bg-yellow-500/90";
-    case "PENDING":
-      return "bg-blue-500 hover:bg-blue-500/90";
-    case "CANCELLED":
-      return "bg-red-500 hover:bg-red-500/90";
-    default:
-      return "";
-  }
 }

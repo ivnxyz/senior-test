@@ -13,7 +13,6 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   ArrowLeft,
@@ -25,13 +24,18 @@ import {
   Package,
   Tag,
   User,
+  PencilIcon,
 } from "lucide-react";
 import dayjs from "@/lib/dayjs";
+import { UpdateStatusDialog } from "@/components/update-status-dialog";
+import { useState } from "react";
+import { getStatusBadgeClass } from "@/lib/utils";
 
 export default function RepairOrderDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = Number(params.id);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
 
   const { data: repairOrderData, isLoading } = api.repairOrders.find.useQuery({
     id,
@@ -77,32 +81,19 @@ export default function RepairOrderDetailPage() {
     return `$${amount.toFixed(2)}`;
   };
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "COMPLETED":
-        return "bg-green-500 hover:bg-green-500/90";
-      case "IN_PROGRESS":
-        return "bg-yellow-500 hover:bg-yellow-500/90";
-      case "PENDING":
-        return "bg-blue-500 hover:bg-blue-500/90";
-      case "CANCELLED":
-        return "bg-red-500 hover:bg-red-500/90";
-      default:
-        return "";
-    }
-  };
-
   return (
     <div className="w-full p-4">
       <Header>
-        <div className="flex items-center">
-          <Button variant="ghost" size="icon" onClick={handleBack}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <span className="ml-2">
-            Repair Order #{repairOrder.id} - {repairOrder.vehicle.make.name}{" "}
-            {repairOrder.vehicle.model}
-          </span>
+        <div className="flex w-full items-center justify-between">
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" onClick={handleBack}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <span className="ml-2">
+              Repair Order #{repairOrder.id} - {repairOrder.vehicle.make.name}{" "}
+              {repairOrder.vehicle.model}
+            </span>
+          </div>
         </div>
       </Header>
 
@@ -120,9 +111,15 @@ export default function RepairOrderDetailPage() {
                   {dayjs(repairOrder.createdAt).format("LL")}
                 </CardDescription>
               </div>
-              <Badge className={getStatusBadgeClass(repairOrder.status)}>
-                {repairOrder.status}
-              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setStatusDialogOpen(true)}
+                className={getStatusBadgeClass(repairOrder.status)}
+              >
+                {repairOrder.status.replace("_", " ")}
+                <PencilIcon className="h-2 w-2" />
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -370,6 +367,20 @@ export default function RepairOrderDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Status Update Dialog */}
+      <UpdateStatusDialog
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+        repairOrderId={repairOrder.id}
+        currentStatus={
+          repairOrder.status as
+            | "PENDING"
+            | "IN_PROGRESS"
+            | "COMPLETED"
+            | "CANCELLED"
+        }
+      />
     </div>
   );
 }
