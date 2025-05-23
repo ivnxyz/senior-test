@@ -5,6 +5,8 @@ The solution follows a **monolithic architecture** built entirely with **Next.js
 
 **Production demo:** <https://senior-test.vercel.app>
 
+**Demo video:** <https://youtu.be/A6r68_E3PaU>
+
 ---
 
 ## Tech Stack
@@ -190,6 +192,11 @@ The UI follows the standard **Next.js App Router** layout. All public routes liv
 | `lib/` | Shared utilities such as `dayjs` helpers and form-validation schemas. |
 | `server/` | Back-end API handlers and database connection logic. |
 | `styles/` | Tailwind CSS configuration and global style sheets. |
+
+
+### Walkthrough video
+
+You can find a video demo of the app here: https://youtu.be/A6r68_E3PaU
 
 
 ## Back-End Documentation
