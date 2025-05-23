@@ -5,6 +5,7 @@ import { vehiclesRouter } from "@/server/api/routers/vehicles";
 import { partsRouter } from "@/server/api/routers/parts";
 import { repairOrdersRouter } from "@/server/api/routers/repair-orders";
 import { laborsRouter } from "@/server/api/routers/labors";
+import { orderDetailsRouter } from "@/server/api/routers/order-details";
 
 /**
  * This is the primary router for your server.
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   parts: partsRouter,
   repairOrders: repairOrdersRouter,
   labors: laborsRouter,
+  orderDetails: orderDetailsRouter,
 });
 
 // export type definition of API
