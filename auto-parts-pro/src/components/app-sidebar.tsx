@@ -1,5 +1,6 @@
 import {
   BoltIcon,
+  BookOpenIcon,
   BookUserIcon,
   CarFrontIcon,
   CarIcon,
@@ -44,6 +45,11 @@ const items = [
     title: "Parts",
     url: "/parts",
     icon: BoltIcon,
+  },
+  {
+    title: "Documentation",
+    url: "/docs",
+    icon: BookOpenIcon,
   },
 ];
 
