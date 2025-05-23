@@ -13,6 +13,7 @@ export interface EndpointInfo {
     input?: any;
     output?: any;
   };
+  returnType?: string;
 }
 
 export interface RouterInfo {
@@ -61,16 +62,39 @@ export function generateTRPCDocumentation(
     // Type assertion for procedure since it's from the tRPC internal structure
     const typedProcedure = procedure as any;
 
+    // Enhanced debugging and inspection
+    console.log(`Inspecting procedure: ${procedurePath}`, {
+      type: typedProcedure._def?.type,
+      inputs: typedProcedure._def?.inputs,
+      output: typedProcedure._def?.output,
+      meta: typedProcedure._def?.meta,
+      hasOutput: !!typedProcedure._def?.output,
+    });
+
+    const inputSchema = typedProcedure._def?.inputs?.[0] 
+      ? convertZodToJsonSchema(typedProcedure._def.inputs[0])
+      : undefined;
+
+    let outputSchema: any = undefined;
+    let returnType = 'any';
+
+    // Try to extract output schema
+    if (typedProcedure._def?.output) {
+      outputSchema = convertZodToJsonSchema(typedProcedure._def.output);
+    } else {
+      // If no explicit output schema, infer from the endpoint type and context
+      outputSchema = inferOutputSchema(routerName, endpointName, typedProcedure._def?.type);
+      returnType = inferReturnType(routerName, endpointName, typedProcedure._def?.type);
+    }
+
     const endpoint: EndpointInfo = {
       name: endpointName,
       type: typedProcedure._def?.type ?? 'query',
       path: `/api/trpc/${procedurePath}`,
-      inputSchema: typedProcedure._def?.inputs?.[0] 
-        ? convertZodToJsonSchema(typedProcedure._def.inputs[0])
-        : undefined,
-      outputSchema: typedProcedure._def?.output
-        ? convertZodToJsonSchema(typedProcedure._def.output)
-        : undefined,
+      inputSchema,
+      outputSchema,
+      returnType,
+      description: generateEndpointDescription(routerName, endpointName, typedProcedure._def?.type),
     };
 
     routerMap.get(routerName)!.push(endpoint);
@@ -93,6 +117,249 @@ export function generateTRPCDocumentation(
     routers: routers.sort((a, b) => a.name.localeCompare(b.name)),
     generatedAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Infer output schema based on router and endpoint patterns
+ */
+function inferOutputSchema(routerName: string, endpointName: string, type?: string): any {
+  const commonResponses = {
+    list: {
+      type: 'array',
+      items: { type: 'object' },
+      description: `Array of ${routerName} objects`
+    },
+    create: {
+      type: 'object',
+      description: `Created ${routerName.slice(0, -1)} object with ID and timestamps`,
+      properties: {
+        id: { type: 'number', description: 'Unique identifier' },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' }
+      }
+    },
+    update: {
+      type: 'object',
+      description: `Updated ${routerName.slice(0, -1)} object`,
+      properties: {
+        id: { type: 'number', description: 'Unique identifier' },
+        updatedAt: { type: 'string', format: 'date-time' }
+      }
+    },
+    delete: {
+      type: 'object',
+      description: `Deleted ${routerName.slice(0, -1)} object`,
+      properties: {
+        id: { type: 'number', description: 'ID of deleted record' }
+      }
+    }
+  };
+
+  // Check for common patterns
+  if (endpointName in commonResponses) {
+    return commonResponses[endpointName as keyof typeof commonResponses];
+  }
+
+  // Router-specific schemas
+  switch (routerName) {
+    case 'customers':
+      return getCustomerOutputSchema(endpointName);
+    case 'parts':
+      return getPartOutputSchema(endpointName);
+    case 'vehicles':
+      return getVehicleOutputSchema(endpointName);
+    case 'makes':
+      return getMakeOutputSchema(endpointName);
+    case 'repairOrders':
+      return getRepairOrderOutputSchema(endpointName);
+    case 'labors':
+      return getLaborOutputSchema(endpointName);
+    case 'orderDetails':
+      return getOrderDetailOutputSchema(endpointName);
+    default:
+      return {
+        type: 'object',
+        description: `${type === 'query' ? 'Query' : 'Mutation'} result`
+      };
+  }
+}
+
+/**
+ * Generate specific output schemas for each router
+ */
+function getCustomerOutputSchema(endpointName: string): any {
+  const baseCustomer = {
+    type: 'object',
+    properties: {
+      id: { type: 'number', description: 'Customer ID' },
+      name: { type: 'string', description: 'Customer name' },
+      email: { type: 'string', format: 'email', description: 'Customer email' },
+      phoneNumber: { type: ['string', 'null'], description: 'Customer phone number' },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' }
+    }
+  };
+
+  switch (endpointName) {
+    case 'list':
+      return { type: 'array', items: baseCustomer };
+    case 'create':
+    case 'update':
+      return baseCustomer;
+    case 'delete':
+      return { type: 'object', properties: { id: { type: 'number' } } };
+    default:
+      return baseCustomer;
+  }
+}
+
+function getPartOutputSchema(endpointName: string): any {
+  const basePart = {
+    type: 'object',
+    properties: {
+      id: { type: 'number', description: 'Part ID' },
+      name: { type: 'string', description: 'Part name' },
+      partNumber: { type: 'string', description: 'Part number/SKU' },
+      price: { type: 'number', description: 'Part price' },
+      quantity: { type: 'number', description: 'Available quantity' },
+      description: { type: ['string', 'null'], description: 'Part description' },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' }
+    }
+  };
+
+  switch (endpointName) {
+    case 'list':
+      return { type: 'array', items: basePart };
+    case 'create':
+    case 'update':
+      return basePart;
+    case 'delete':
+      return { type: 'object', properties: { id: { type: 'number' } } };
+    default:
+      return basePart;
+  }
+}
+
+function getVehicleOutputSchema(endpointName: string): any {
+  const baseVehicle = {
+    type: 'object',
+    properties: {
+      id: { type: 'number', description: 'Vehicle ID' },
+      make: { type: 'string', description: 'Vehicle make' },
+      model: { type: 'string', description: 'Vehicle model' },
+      year: { type: 'number', description: 'Vehicle year' },
+      vin: { type: 'string', description: 'Vehicle identification number' },
+      customerId: { type: 'number', description: 'Owner customer ID' },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' }
+    }
+  };
+
+  switch (endpointName) {
+    case 'list':
+      return { type: 'array', items: baseVehicle };
+    default:
+      return baseVehicle;
+  }
+}
+
+function getMakeOutputSchema(endpointName: string): any {
+  const baseMake = {
+    type: 'object',
+    properties: {
+      id: { type: 'number', description: 'Make ID' },
+      name: { type: 'string', description: 'Make name' },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' }
+    }
+  };
+
+  return endpointName === 'list' ? { type: 'array', items: baseMake } : baseMake;
+}
+
+function getRepairOrderOutputSchema(endpointName: string): any {
+  const baseRepairOrder = {
+    type: 'object',
+    properties: {
+      id: { type: 'number', description: 'Repair order ID' },
+      vehicleId: { type: 'number', description: 'Vehicle ID' },
+      customerId: { type: 'number', description: 'Customer ID' },
+      status: { type: 'string', description: 'Order status' },
+      totalAmount: { type: 'number', description: 'Total amount' },
+      description: { type: 'string', description: 'Work description' },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' }
+    }
+  };
+
+  return endpointName === 'list' ? { type: 'array', items: baseRepairOrder } : baseRepairOrder;
+}
+
+function getLaborOutputSchema(endpointName: string): any {
+  const baseLabor = {
+    type: 'object',
+    properties: {
+      id: { type: 'number', description: 'Labor ID' },
+      name: { type: 'string', description: 'Labor type name' },
+      rate: { type: 'number', description: 'Hourly rate' },
+      description: { type: 'string', description: 'Labor description' },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' }
+    }
+  };
+
+  return endpointName === 'list' ? { type: 'array', items: baseLabor } : baseLabor;
+}
+
+function getOrderDetailOutputSchema(endpointName: string): any {
+  const baseOrderDetail = {
+    type: 'object',
+    properties: {
+      id: { type: 'number', description: 'Order detail ID' },
+      repairOrderId: { type: 'number', description: 'Repair order ID' },
+      partId: { type: ['number', 'null'], description: 'Part ID if applicable' },
+      laborId: { type: ['number', 'null'], description: 'Labor ID if applicable' },
+      quantity: { type: 'number', description: 'Quantity' },
+      unitPrice: { type: 'number', description: 'Unit price' },
+      totalPrice: { type: 'number', description: 'Total price' },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' }
+    }
+  };
+
+  return endpointName === 'list' ? { type: 'array', items: baseOrderDetail } : baseOrderDetail;
+}
+
+/**
+ * Infer return type description
+ */
+function inferReturnType(routerName: string, endpointName: string, type?: string): string {
+  if (endpointName === 'list') {
+    return `${routerName.charAt(0).toUpperCase() + routerName.slice(1, -1)}[]`;
+  }
+  
+  if (endpointName === 'delete') {
+    return `{ id: number }`;
+  }
+
+  return `${routerName.charAt(0).toUpperCase() + routerName.slice(1, -1)}`;
+}
+
+/**
+ * Generate endpoint description
+ */
+function generateEndpointDescription(routerName: string, endpointName: string, type?: string): string {
+  const entityName = routerName.slice(0, -1); // Remove 's' from plural
+  const actions: Record<string, string> = {
+    list: `Get all ${routerName}`,
+    create: `Create a new ${entityName}`,
+    update: `Update an existing ${entityName}`,
+    delete: `Delete a ${entityName}`,
+    byId: `Get a ${entityName} by ID`,
+  };
+
+  return actions[endpointName] ?? `${type === 'query' ? 'Query' : 'Mutate'} ${endpointName}`;
 }
 
 /**

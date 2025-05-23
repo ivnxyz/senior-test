@@ -12,7 +12,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Copy, FileText, Globe, Download, ExternalLink } from "lucide-react";
+import {
+  Copy,
+  FileText,
+  Globe,
+  Download,
+  ExternalLink,
+  Info,
+} from "lucide-react";
 import type {
   ApiDocumentation,
   EndpointInfo,
@@ -71,14 +78,25 @@ export default function DocsPage() {
     }
   };
 
-  const renderJsonSchema = (schema: any) => {
+  const renderJsonSchema = (schema: any, title: string) => {
     if (!schema)
       return <span className="text-gray-500">No schema defined</span>;
 
     return (
-      <pre className="overflow-x-auto rounded bg-gray-50 p-3 text-sm">
-        {JSON.stringify(schema, null, 2)}
-      </pre>
+      <div>
+        {schema.description && (
+          <div className="mb-3 rounded border-l-4 border-blue-400 bg-blue-50 p-2">
+            <div className="flex items-center gap-2 text-blue-800">
+              <Info className="h-4 w-4" />
+              <span className="font-medium">Description:</span>
+            </div>
+            <p className="mt-1 text-blue-700">{schema.description}</p>
+          </div>
+        )}
+        <pre className="overflow-x-auto rounded bg-gray-50 p-3 text-sm">
+          {JSON.stringify(schema, null, 2)}
+        </pre>
+      </div>
     );
   };
 
@@ -93,6 +111,11 @@ export default function DocsPage() {
             >
               {endpoint.type.toUpperCase()}
             </Badge>
+            {endpoint.returnType && (
+              <Badge variant="outline" className="font-mono text-xs">
+                → {endpoint.returnType}
+              </Badge>
+            )}
           </CardTitle>
           <Button
             variant="outline"
@@ -103,9 +126,14 @@ export default function DocsPage() {
           </Button>
         </div>
         <CardDescription>
-          <code className="rounded bg-gray-100 px-2 py-1 text-sm">
-            {endpoint.path}
-          </code>
+          <div className="space-y-1">
+            <code className="rounded bg-gray-100 px-2 py-1 text-sm">
+              {endpoint.path}
+            </code>
+            {endpoint.description && (
+              <p className="mt-1 text-gray-600">{endpoint.description}</p>
+            )}
+          </div>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -117,11 +145,11 @@ export default function DocsPage() {
           </TabsList>
           <TabsContent value="input" className="mt-4">
             <h4 className="mb-2 font-semibold">Input Schema:</h4>
-            {renderJsonSchema(endpoint.inputSchema)}
+            {renderJsonSchema(endpoint.inputSchema, "Input")}
           </TabsContent>
           <TabsContent value="output" className="mt-4">
             <h4 className="mb-2 font-semibold">Output Schema:</h4>
-            {renderJsonSchema(endpoint.outputSchema)}
+            {renderJsonSchema(endpoint.outputSchema, "Output")}
           </TabsContent>
           <TabsContent value="example" className="mt-4">
             <h4 className="mb-2 font-semibold">tRPC Usage Example:</h4>
@@ -145,11 +173,116 @@ const result = await api.${selectedRouter}.${endpoint.name}(${
                     endpoint.inputSchema ? "{ /* input data */ }" : ""
                   });`}
             </pre>
+
+            <div className="mt-4">
+              <h5 className="mb-2 font-medium">Example Input/Output:</h5>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                {endpoint.inputSchema && (
+                  <div>
+                    <p className="mb-1 text-sm font-medium text-gray-700">
+                      Input:
+                    </p>
+                    <pre className="rounded bg-blue-50 p-2 text-xs">
+                      {generateExampleInput(endpoint.inputSchema)}
+                    </pre>
+                  </div>
+                )}
+                {endpoint.outputSchema && (
+                  <div>
+                    <p className="mb-1 text-sm font-medium text-gray-700">
+                      Output:
+                    </p>
+                    <pre className="rounded bg-green-50 p-2 text-xs">
+                      {generateExampleOutput(endpoint.outputSchema)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
   );
+
+  const generateExampleInput = (schema: any): string => {
+    if (!schema?.properties) return "// No input required";
+
+    const example: any = {};
+    Object.entries(schema.properties).forEach(([key, prop]: [string, any]) => {
+      if (key === "id") return; // Skip ID in input examples
+
+      switch (prop.type) {
+        case "string":
+          if (prop.format === "email") example[key] = "user@example.com";
+          else if (key.includes("phone")) example[key] = "+1-555-123-4567";
+          else if (key.includes("name")) example[key] = "Example Name";
+          else example[key] = "Example string";
+          break;
+        case "number":
+          example[key] =
+            key.includes("price") || key.includes("amount") ? 29.99 : 123;
+          break;
+        case "boolean":
+          example[key] = true;
+          break;
+        default:
+          if (Array.isArray(prop.type) && prop.type.includes("null")) {
+            example[key] = null;
+          }
+      }
+    });
+
+    return JSON.stringify(example, null, 2);
+  };
+
+  const generateExampleOutput = (schema: any): string => {
+    if (!schema) return "// Output type inferred";
+
+    if (schema.type === "array") {
+      return `[
+  // Array of ${schema.items?.description ?? "objects"}
+  ${generateExampleOutput(schema.items)}
+]`;
+    }
+
+    if (schema.properties) {
+      const example: any = {};
+      Object.entries(schema.properties).forEach(
+        ([key, prop]: [string, any]) => {
+          switch (prop.type) {
+            case "string":
+              if (prop.format === "date-time")
+                example[key] = new Date().toISOString();
+              else if (prop.format === "email")
+                example[key] = "user@example.com";
+              else if (key.includes("name")) example[key] = "Example Name";
+              else example[key] = "Example string";
+              break;
+            case "number":
+              example[key] =
+                key === "id"
+                  ? 1
+                  : key.includes("price") || key.includes("amount")
+                    ? 29.99
+                    : 123;
+              break;
+            case "boolean":
+              example[key] = true;
+              break;
+            default:
+              if (Array.isArray(prop.type) && prop.type.includes("null")) {
+                example[key] = null;
+              }
+          }
+        },
+      );
+
+      return JSON.stringify(example, null, 2);
+    }
+
+    return JSON.stringify({ message: "Success" }, null, 2);
+  };
 
   if (loading) {
     return (
@@ -262,7 +395,12 @@ const result = await api.${selectedRouter}.${endpoint.name}(${
                     >
                       <FileText className="mr-2 h-4 w-4" />
                       {router.name}
-                      <Badge variant="outline" className="ml-auto">
+                      <Badge
+                        variant={
+                          selectedRouter === router.name ? "default" : "outline"
+                        }
+                        className="ml-auto"
+                      >
                         {router.endpoints.length}
                       </Badge>
                     </Button>
