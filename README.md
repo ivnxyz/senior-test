@@ -164,7 +164,7 @@ erDiagram
     vehicles    ||--o{ repair_orders  : "involved in"
     customers   ||--o{ repair_orders  : "requests"
     repair_orders||--o{ order_details  : "comprises"
-    pars       ||--o{ order_details  : "listed in"
+    parts       ||--o{ order_details  : "listed in"
     repair_orders||--o{ labors        : "requires"
 ```
 
