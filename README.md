@@ -7,6 +7,34 @@ The solution follows a **monolithic architecture** built entirely with **Next.js
 
 **Demo video:** <https://youtu.be/A6r68_E3PaU>
 
+## Installation
+
+Use the following command within the `auto-parts-pro` folder to install packages:
+```
+npm install --force
+```
+Some packages have issues with React 19. That's why we're using force.
+
+Add the following env variables within the `auto-parts-pro` folder:
+```
+DATABASE_URL="<Your database url>"
+
+# This is only needed if the database is hosted on supabase. Check https://supabase.com/partners/integrations/prisma
+DIRECT_URL="<Your database direct url>"
+
+TEST_DATABASE_URL="<Your test database url>"
+```
+
+Run the project with the following command:
+```
+npm run dev
+```
+
+Run tests with the following command:
+```
+npm run test
+```
+
 ---
 
 ## Tech Stack

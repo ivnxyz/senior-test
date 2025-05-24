@@ -4,11 +4,17 @@ import { env } from '@/env';
 import { appRouter } from '@/server/api/root';
 
 // Create test database client
-const createTestPrismaClient = () =>
-  new PrismaClient({
+const createTestPrismaClient = () => {
+  const testDatabaseUrl = env.TEST_DATABASE_URL;
+  
+  if (!testDatabaseUrl) {
+    throw new Error('TEST_DATABASE_URL must be defined in environment variables');
+  }
+
+  return new PrismaClient({
     datasources: {
       db: {
-        url: env.TEST_DATABASE_URL ?? '',
+        url: testDatabaseUrl,
       },
     },
     log: ['error'],
@@ -30,6 +36,7 @@ const createTestPrismaClient = () =>
       },
     },
   }));
+};
 
 export const testDb = createTestPrismaClient();
 
@@ -63,8 +70,18 @@ export const cleanDatabase = async () => {
 // Setup database for tests
 export const setupTestDatabase = async () => {
   const { execSync } = await import('child_process');
+  
+  // Make sure we have a test database URL
+  if (!env.TEST_DATABASE_URL) {
+    throw new Error('TEST_DATABASE_URL is not configured in environment variables');
+  }
+  
   execSync('npx prisma migrate deploy', { 
-    env: { ...process.env, DATABASE_URL: env.TEST_DATABASE_URL ?? '' },
+    env: { 
+      ...process.env, 
+      DATABASE_URL: env.TEST_DATABASE_URL,
+      DIRECT_URL: env.TEST_DATABASE_URL 
+    },
     stdio: 'inherit' 
   });
 };
