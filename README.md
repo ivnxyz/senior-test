@@ -18,6 +18,7 @@ The solution follows a **monolithic architecture** built entirely with **Next.js
 | **API** | **tRPC** + **react-query** | End-to-end type safety and built-in loading / error states |
 | **Web Framework** | **Next.js** | File-system routing, hybrid SSR/SSG, and seamless full-stack TypeScript |
 | **UI / Validation** | **Shadcn UI**, **Zod** | Accessible, unstyled UI primitives and robust schema validation |
+| **Testing** | **Vitest** | Modern, fast test runner with native TypeScript support and excellent DX |
 
 ---
 
@@ -32,6 +33,12 @@ The solution follows a **monolithic architecture** built entirely with **Next.js
 - 🗄️ **PostgreSQL @ Supabase** for a managed, production-ready database  
 - 🔄 **Prisma** for elegant data modeling and migrations  
 - 🔌 **tRPC** with **react-query** to auto-generate type-safe hooks, handle caching, and manage request states  
+
+### Testing Highlights
+
+- 🧪 **Vitest** for comprehensive unit testing with database isolation  
+- 📊 **Complete API coverage** with tests for all CRUD operations, business logic, and error scenarios  
+- 🔒 **Separate test database** to ensure development data integrity  
 
 ---
 
@@ -158,7 +165,7 @@ erDiagram
         DATETIME deletedAt
     }
 
-    %% Relationships — crow’s-foot notation
+    %% Relationships — crow's-foot notation
     customers   ||--o{ vehicles      : "owns"
     makes       ||--o{ vehicles      : "produces"
     vehicles    ||--o{ repair_orders  : "involved in"
@@ -205,7 +212,7 @@ The complete API reference lives inside the app itself:
 
 **URL:** <https://senior-test.vercel.app/docs>
 
-There you’ll find every endpoint together with its request/response schemas.
+There you'll find every endpoint together with its request/response schemas.
 
 ---
 
